@@ -1,23 +1,23 @@
-import {Request,Response} from 'express'
+import {NextFunction, Request,Response} from 'express'
 import { AuthModule } from './module';
 
 const authModule = new AuthModule();
 
 export class AuthService{
-    login(request:Request,response:Response){
-        authModule.login(request,response);
+    login(request:Request,response:Response,next:NextFunction){
+        authModule.login(request,response,next);
     }
-    register(request:Request,response:Response){
-        authModule.register(request,response);
+    register(request:Request,response:Response,next:NextFunction){
+        authModule.register(request,response,next);
     }
-    resetPassword(request:Request,response:Response){
-        authModule.resetPassword(request,response);
+    resetPassword(request:Request,response:Response,next:NextFunction){
+        authModule.resetPassword(request,response,next);
     }
-    changePassword(request:Request,response:Response){
-        authModule.changePassword(request,response);
+    changePassword(request:Request,response:Response,next:NextFunction){
+        authModule.changePassword(request,response,next);
     }
-    verifyEmail(request:Request,response:Response){
-        authModule.verifyEmail(request,response);
+    verifyEmail(request:Request,response:Response,next:NextFunction){
+        authModule.verifyEmail(request,response,next);
     }
     
 }

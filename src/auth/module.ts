@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { comparePassword, hashPassword } from "../lib/bcrypt";
 import { generateToken, verifyToken } from "../lib/jwt";
@@ -7,37 +7,43 @@ import { sendVerificationEmail } from "../lib/nodemailer";
 const prisma = new PrismaClient();
 
 export class AuthModule {
-  async login(request: Request, response: Response) {
-    const { email, password }:{email:string,password:string} = request.body;
+
+  async login(request: Request, response: Response, next: NextFunction) {
+    const { email, password }: { email: string; password: string } =
+      request.body;
     try {
       const user = await prisma.user.findUnique({
         where: {
           email: email,
         },
       });
-      if (!user || !comparePassword(password, user.password))
-        throw new Error("Invalid credentials");
+      if (!user || !comparePassword(password, user.password)) {
+        const err = new Error("Invalid credentials");
+        err.statusCode = 401;
+        return next(err);
+      }
 
       if (!user.isVerified) {
-        return response
-          .status(403)
-          .json({ error: { message: "Email not verified" } });
+        console.log("here");
+        const err = new Error("Email not verified");
+        err.statusCode = 403;
+        return next(err);
       }
       const token = await generateToken({ id: user.id, email: user.email });
       return response
         .status(200)
         .send({ message: "Successful login", token: token });
     } catch (error) {
-      return response
-        .status(401)
-        .json({ error: { message: "Invalid credentials" } });
+      const err = new Error("Something Went Wrong");
+      next(err);
     }
   }
 
-  async register(request: Request, response: Response) {
-    const { email, password }:{email:string,password:string} = request.body;
+  async register(request: Request, response: Response, next: NextFunction) {
+    const { email, password }: { email: string; password: string } =
+      request.body;
     const hashedPassword = await hashPassword(password);
-    console.log(email,password);
+    console.log(email, password);
     try {
       const user = await prisma.user.create({
         data: {
@@ -54,12 +60,13 @@ export class AuthModule {
       response.status(201).json({ message: "User created", user });
     } catch (error) {
       console.log(error);
-      response
-        .status(400)
-        .json({ error: { message: "Couldn't create new user" } });
+      const err = new Error("Could not create new user");
+      err.statusCode = 400;
+      next(err);
     }
   }
-  async verifyEmail(request: Request, response: Response) {
+
+  async verifyEmail(request: Request, response: Response,next:NextFunction) {
     const { token } = request.query;
     try {
       await verifyToken(token as string, process.env.JWT_SECRET_KEY!);
@@ -71,18 +78,26 @@ export class AuthModule {
 
       response.status(200).json({ message: "Email verified successfully" });
     } catch (error) {
-      response.status(400).json({ error: "Invalid or expired token" });
+      const err = new Error("Invalid or expired token");
+      err.statusCode = 400;
+      next(err);
     }
   }
 
-  async resetPassword(request: Request, response: Response) {
-    const { email, password }:{email:string,password:string} = request.body;
+  async resetPassword(
+    request: Request,
+    response: Response,
+    next: NextFunction,
+  ) {
+    const { email, password }: { email: string; password: string } =
+      request.body;
     try {
       const user = await prisma.user.findUnique({ where: { email: email } });
-      if (!user)
-        return response
-          .status(404)
-          .json({ message: { error: "User not found" } });
+      if (!user) {
+        const err = new Error("User not found");
+        err.statusCode = 404;
+        return next(err);
+      }
       const hashedPassword = await hashPassword(password);
       await prisma.user.update({
         where: {
@@ -94,31 +109,42 @@ export class AuthModule {
       });
       return response.status(201).json({ message: "Password reset" });
     } catch (error) {
-      return response
-        .status(500)
-        .json({ message: { error: "Something Went Wrong" } });
+      const err = new Error("Something went wrong");
+      next(err);
     }
   }
-  async changePassword(request: Request, response: Response) {
-    const { email, oldPassword, newPassword }:{email:string,oldPassword:string,newPassword:string} = request.body;
+  
+  async changePassword(
+    request: Request,
+    response: Response,
+    next: NextFunction,
+  ) {
+    const {
+      email,
+      oldPassword,
+      newPassword,
+    }: { email: string; oldPassword: string; newPassword: string } =
+      request.body;
     try {
       const user = await prisma.user.findUnique({
         where: {
           email: email,
         },
       });
-      if (!user)
-        return response
-          .status(404)
-          .json({ message: { error: "User not found" } });
+      if (!user) {
+        const err = new Error("User not found");
+        err.statusCode = 404;
+        return next(err);
+      }
       const isOldPasswordValid = await comparePassword(
         oldPassword,
-        user.password
+        user.password,
       );
-      if (!isOldPasswordValid)
-        return response
-          .status(401)
-          .json({ message: { error: "Invalid Credentials" } });
+      if (!isOldPasswordValid) {
+        const err = new Error("Invalid credentials");
+        err.statusCode = 401;
+        return next(err);
+      }
       const hashedPassword = await hashPassword(newPassword);
       await prisma.user.update({
         where: { email: email },
@@ -126,9 +152,8 @@ export class AuthModule {
       });
       return response.status(201).json({ message: "Password changed" });
     } catch (error) {
-      return response
-        .status(500)
-        .json({ message: { error: "Something went wrong" } });
+      const err = new Error("Something went wrong");
+      next(err);
     }
   }
 }
