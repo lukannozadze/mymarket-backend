@@ -38,7 +38,7 @@
     "nodemailer": "^6.9.13"
   },
   "lint-staged": {
-    "**/*.ts": [
+    "**/*": [
       "bash -c tsc",
       "prettier --write"
     ]
