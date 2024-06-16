@@ -1,12 +1,12 @@
-import express from "express";
-import morgan from "morgan";
-import { authRouter } from "./auth/route";
-import { globalErrorHandler } from "./utils/globalErrorHandler";
-import dotenv from "dotenv";
+import express from 'express';
+import morgan from 'morgan';
+import { authRouter } from './auth/route';
+import { globalErrorHandler } from './utils/globalErrorHandler';
+import dotenv from 'dotenv';
 import {
   handleUncaughtExceptions,
   handleUnhandledRejections,
-} from "./utils/errorHandler";
+} from './utils/processErrorHandler';
 
 dotenv.config();
 
@@ -18,8 +18,8 @@ handleUnhandledRejections();
 handleUncaughtExceptions();
 
 app.use(express.json());
-app.use(morgan("dev"));
-app.use("/auth", authRouter);
+app.use(morgan('dev'));
+app.use('/auth', authRouter);
 app.use(globalErrorHandler);
 
 app.listen(PORT, () => {

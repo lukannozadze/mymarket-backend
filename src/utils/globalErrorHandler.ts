@@ -1,20 +1,65 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 
 declare global {
   interface Error {
     statusCode?: number;
   }
 }
+type ErrorCode = keyof typeof ERROR_CODES;
+
+type ErrorMap = {
+  [key in ErrorCode]: {
+    status: number;
+    message: string;
+  };
+};
+
+export const ERROR_CODES = {
+  invalidCredentials: 'INVALID CREDENTIALS',
+  emailNotVerified: 'EMAIL IS NOT VERIFIED',
+  couldNotCreateUser: 'COULD NOT CREATE NEW USER',
+  invalidOrExpiredToken: 'INVALID OR EXPIRED TOKEN',
+  userNotFound: 'USER NOT FOUND',
+} as const;
+
+const ERROR_MAP: ErrorMap = {
+  invalidOrExpiredToken: {
+    status: 400,
+    message: ERROR_CODES.invalidOrExpiredToken,
+  },
+  invalidCredentials: {
+    status: 401,
+    message: ERROR_CODES.invalidCredentials,
+  },
+  emailNotVerified: {
+    status: 403,
+    message: ERROR_CODES.emailNotVerified,
+  },
+  userNotFound: {
+    status: 404,
+    message: ERROR_CODES.userNotFound,
+  },
+  couldNotCreateUser: {
+    status: 500,
+    message: ERROR_CODES.couldNotCreateUser,
+  },
+};
 
 export const globalErrorHandler = (
   error: Error,
-  request: Request,
+  _request: Request,
   response: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
-  error.statusCode = error.statusCode || 500;
+  const isValidError = Object.keys(ERROR_CODES).find(
+    (key) => ERROR_CODES[key as ErrorCode] === error.message,
+  );
 
-  response.status(error.statusCode).json({
-    message: error.message,
-  });
+  if (isValidError) {
+    const { status, message } = ERROR_MAP[isValidError as ErrorCode];
+    return response.status(status).json({
+      message: message,
+    });
+  }
+  response.status(500).json({ message: 'SOMETHING WENT WRONG' });
 };
