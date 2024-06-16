@@ -1,16 +1,21 @@
-import { NextFunction, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { comparePassword, hashPassword } from '../lib/bcrypt';
-import { generateToken, verifyToken } from '../lib/jwt';
-import { sendVerificationEmail } from '../lib/nodemailer';
-import { ERROR_CODES } from '../utils/globalErrorHandler';
+import { NextFunction, Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+import { comparePassword, hashPassword } from "../lib/bcrypt";
+import { generateToken, verifyToken } from "../lib/jwt";
+import { sendVerificationEmail } from "../lib/nodemailer";
+import { ERROR_CODES } from "../utils/globalErrorHandler";
+import { User } from "./types";
+
+type LogInCredentials = Pick<User, "email" | "password">;
+type SignInCredentials = Pick<User, "email" | "password">;
+type ResetPasswordCredentials = Pick<User, "email" | "password">;
+type ChangePasswordCredentials = Pick<User, "email" | "oldPassword" | "newPassword">;
 
 const prisma = new PrismaClient();
 
 export class AuthModule {
   async login(request: Request, response: Response, next: NextFunction) {
-    const { email, password }: { email: string; password: string } =
-      request.body;
+    const { email, password }: LogInCredentials = request.body;
     try {
       const user = await prisma.user.findUnique({
         where: {
@@ -25,17 +30,14 @@ export class AuthModule {
         return next(new Error(ERROR_CODES.emailNotVerified));
       }
       const token = await generateToken({ id: user.id, email: user.email });
-      return response
-        .status(200)
-        .send({ message: 'Successful login', token: token });
+      return response.status(200).send({ message: "Successful login", token: token });
     } catch (error) {
-      next(new Error('Something Went Wrong'));
+      next(new Error("Something Went Wrong"));
     }
   }
 
   async register(request: Request, response: Response, next: NextFunction) {
-    const { email, password }: { email: string; password: string } =
-      request.body;
+    const { email, password }: SignInCredentials = request.body;
     const hashedPassword = await hashPassword(password);
     console.log(email, password);
     try {
@@ -51,7 +53,7 @@ export class AuthModule {
         where: { email: email },
         data: { auth_id: token },
       });
-      response.status(201).json({ message: 'User created', user });
+      response.status(201).json({ message: "User created", user });
     } catch (error) {
       console.log(error);
       next(new Error(ERROR_CODES.couldNotCreateUser));
@@ -68,19 +70,14 @@ export class AuthModule {
         data: { isVerified: true },
       });
 
-      response.status(200).json({ message: 'Email verified successfully' });
+      response.status(200).json({ message: "Email verified successfully" });
     } catch (error) {
       next(new Error(ERROR_CODES.invalidOrExpiredToken));
     }
   }
 
-  async resetPassword(
-    request: Request,
-    response: Response,
-    next: NextFunction,
-  ) {
-    const { email, password }: { email: string; password: string } =
-      request.body;
+  async resetPassword(request: Request, response: Response, next: NextFunction) {
+    const { email, password }: ResetPasswordCredentials = request.body;
     try {
       const user = await prisma.user.findUnique({ where: { email: email } });
       if (!user) {
@@ -95,23 +92,14 @@ export class AuthModule {
           password: hashedPassword,
         },
       });
-      return response.status(201).json({ message: 'Password reset' });
+      return response.status(201).json({ message: "Password reset" });
     } catch (error) {
-      next(new Error('Something Went Wrong'));
+      next(new Error("Something Went Wrong"));
     }
   }
 
-  async changePassword(
-    request: Request,
-    response: Response,
-    next: NextFunction,
-  ) {
-    const {
-      email,
-      oldPassword,
-      newPassword,
-    }: { email: string; oldPassword: string; newPassword: string } =
-      request.body;
+  async changePassword(request: Request, response: Response, next: NextFunction) {
+    const { email, oldPassword, newPassword }: ChangePasswordCredentials = request.body;
     try {
       const user = await prisma.user.findUnique({
         where: {
@@ -121,10 +109,7 @@ export class AuthModule {
       if (!user) {
         return next(new Error(ERROR_CODES.userNotFound));
       }
-      const isOldPasswordValid = await comparePassword(
-        oldPassword,
-        user.password,
-      );
+      const isOldPasswordValid = await comparePassword(oldPassword, user.password);
       if (!isOldPasswordValid) {
         return next(new Error(ERROR_CODES.invalidCredentials));
       }
@@ -133,9 +118,9 @@ export class AuthModule {
         where: { email: email },
         data: { password: hashedPassword },
       });
-      return response.status(201).json({ message: 'Password changed' });
+      return response.status(201).json({ message: "Password changed" });
     } catch (error) {
-      next(new Error('Something went wrong'));
+      next(new Error("Something went wrong"));
     }
   }
 }

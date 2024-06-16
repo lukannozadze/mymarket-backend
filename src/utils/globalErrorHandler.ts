@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
 declare global {
   interface Error {
@@ -15,11 +15,11 @@ type ErrorMap = {
 };
 
 export const ERROR_CODES = {
-  invalidCredentials: 'INVALID CREDENTIALS',
-  emailNotVerified: 'EMAIL IS NOT VERIFIED',
-  couldNotCreateUser: 'COULD NOT CREATE NEW USER',
-  invalidOrExpiredToken: 'INVALID OR EXPIRED TOKEN',
-  userNotFound: 'USER NOT FOUND',
+  invalidCredentials: "INVALID CREDENTIALS",
+  emailNotVerified: "EMAIL IS NOT VERIFIED",
+  couldNotCreateUser: "COULD NOT CREATE NEW USER",
+  invalidOrExpiredToken: "INVALID OR EXPIRED TOKEN",
+  userNotFound: "USER NOT FOUND",
 } as const;
 
 const ERROR_MAP: ErrorMap = {
@@ -51,15 +51,15 @@ export const globalErrorHandler = (
   response: Response,
   _next: NextFunction,
 ) => {
-  const isValidError = Object.keys(ERROR_CODES).find(
+  const validError = Object.keys(ERROR_CODES).find(
     (key) => ERROR_CODES[key as ErrorCode] === error.message,
   );
 
-  if (isValidError) {
-    const { status, message } = ERROR_MAP[isValidError as ErrorCode];
+  if (validError) {
+    const { status, message } = ERROR_MAP[validError as ErrorCode];
     return response.status(status).json({
       message: message,
     });
   }
-  response.status(500).json({ message: 'SOMETHING WENT WRONG' });
+  response.status(500).json({ message: "SOMETHING WENT WRONG" });
 };
