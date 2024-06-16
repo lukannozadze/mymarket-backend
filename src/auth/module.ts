@@ -30,7 +30,7 @@ export class AuthModule {
         return next(new Error(ERROR_CODES.emailNotVerified));
       }
       const token = await generateToken({ id: user.id, email: user.email });
-      return response.status(200).send({ message: "Successful login", token: token });
+      return response.status(200).json({ message: "Successful login", token: token });
     } catch (error) {
       next(new Error("Something Went Wrong"));
     }
@@ -39,7 +39,7 @@ export class AuthModule {
   async register(request: Request, response: Response, next: NextFunction) {
     const { email, password }: SignInCredentials = request.body;
     const hashedPassword = await hashPassword(password);
-    console.log(email, password);
+
     try {
       const user = await prisma.user.create({
         data: {
@@ -48,6 +48,7 @@ export class AuthModule {
         },
       });
       const token = await generateToken({ id: user.id, email: user.email });
+      response.setHeader("bearer", token);
       await sendVerificationEmail(email, token);
       await prisma.user.update({
         where: { email: email },
@@ -63,7 +64,7 @@ export class AuthModule {
   async verifyEmail(request: Request, response: Response, next: NextFunction) {
     const { token } = request.query;
     try {
-      await verifyToken(token as string, process.env.JWT_SECRET_KEY!);
+      await verifyToken(token as string, process.env.JWT_SECRET_KEY!, next);
 
       await prisma.user.update({
         where: { auth_id: token as string },
@@ -78,7 +79,10 @@ export class AuthModule {
 
   async resetPassword(request: Request, response: Response, next: NextFunction) {
     const { email, password }: ResetPasswordCredentials = request.body;
+    const bearer = request.headers.authorization;
+
     try {
+      await verifyToken(bearer as string, process.env.JWT_SECRET_KEY!, next);
       const user = await prisma.user.findUnique({ where: { email: email } });
       if (!user) {
         return next(new Error(ERROR_CODES.userNotFound));
@@ -100,7 +104,10 @@ export class AuthModule {
 
   async changePassword(request: Request, response: Response, next: NextFunction) {
     const { email, oldPassword, newPassword }: ChangePasswordCredentials = request.body;
+    const bearer = request.headers.authorization;
+
     try {
+      await verifyToken(bearer as string, process.env.JWT_SECRET_KEY!, next);
       const user = await prisma.user.findUnique({
         where: {
           email: email,
