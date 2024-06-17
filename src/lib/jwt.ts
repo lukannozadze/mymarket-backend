@@ -7,16 +7,31 @@ type generateTokenPayload = {
   email: string;
 };
 
-const SECRET_KEY = process.env.JWT_SECRET_KEY || "mysecretcode!";
+const ACCESS_SECRET_KEY = process.env.JWT_ACCESS_SECRET_KEY || "mysecretaccess!";
+const REFRESH_SECRET_KEY = process.env.JWT_REFRESH_SECRET_KEY || "mysecretrefresh!";
 
-export const generateToken = async ({ id, email }: generateTokenPayload) => {
-  return await jwt.sign({ id, email }, SECRET_KEY, { expiresIn: "1h" });
+export const generateTokens = async ({ id, email }: generateTokenPayload) => {
+  const accessToken = await jwt.sign({ id, email }, ACCESS_SECRET_KEY, { expiresIn: "60000" });
+  const refreshToken = await jwt.sign({ id, email }, REFRESH_SECRET_KEY, { expiresIn: "1h" });
+  return { accessToken, refreshToken };
 };
-export const verifyToken = (token: string, JWT_SECRET: string, next: NextFunction) => {
-  const bearerToken = token.split(" ")[1];
+
+export const verifyToken = async (token: string, JWT_SECRET: string, next: NextFunction) => {
+  const bearerToken = token.includes("Bearer") ? token.split(" ")[1] : token;
   try {
-    return jwt.verify(bearerToken, JWT_SECRET);
+    return await jwt.verify(bearerToken, JWT_SECRET);
   } catch (error) {
+    console.error(error);
+    return next(new Error(ERROR_CODES.invalidOrExpiredToken));
+  }
+};
+
+export const decodeToken = async (token: string, next: NextFunction) => {
+  const bearerToken = token.includes("Bearer") ? token.split(" ")[1] : token;
+  try {
+    return await jwt.decode(bearerToken, { complete: true });
+  } catch (error) {
+    console.error(error);
     return next(new Error(ERROR_CODES.invalidOrExpiredToken));
   }
 };

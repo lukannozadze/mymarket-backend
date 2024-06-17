@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   changePassword,
   login,
+  refreshToken,
   register,
   resetPassword,
   verifyEmail,
@@ -17,15 +18,8 @@ import {
 export const authRouter = Router();
 
 authRouter.post("/login", validateRequest(loginSchema), login),
-authRouter.post("/register", validateRequest(registerSchema), register),
-authRouter.post(
-    "/reset-password",
-    validateRequest(resetPasswordSchema),
-    resetPassword
-  ),
-authRouter.post(
-    "/change-password",
-    validateRequest(changePasswordSchema),
-    changePassword
-  ),
-authRouter.get("/verify-email", verifyEmail);
+  authRouter.post("/register", validateRequest(registerSchema), register),
+  authRouter.post("/reset-password", validateRequest(resetPasswordSchema), resetPassword),
+  authRouter.post("/change-password", validateRequest(changePasswordSchema), changePassword),
+  authRouter.get("/verify-email", verifyEmail);
+authRouter.post("/refresh-token", refreshToken);
