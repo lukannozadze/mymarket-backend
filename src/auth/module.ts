@@ -68,7 +68,7 @@ export class AuthModule {
   async verifyEmail(request: Request, response: Response, next: NextFunction) {
     const { token } = request.query;
     try {
-      await verifyToken(token as string, process.env.JWT_ACCESS_SECRET_KEY!, next);
+      //await verifyToken(token as string, process.env.JWT_ACCESS_SECRET_KEY!, next);
 
       await prisma.user.update({
         where: { accessToken: token as string },
@@ -84,10 +84,7 @@ export class AuthModule {
 
   async resetPassword(request: Request, response: Response, next: NextFunction) {
     const { email, password }: ResetPasswordCredentials = request.body;
-    const bearer = request.headers.authorization;
-
     try {
-      await verifyToken(bearer as string, process.env.JWT_SECRET_KEY!, next);
       const user = await prisma.user.findUnique({ where: { email: email } });
       if (!user) {
         return next(new Error(ERROR_CODES.userNotFound));
@@ -110,10 +107,8 @@ export class AuthModule {
 
   async changePassword(request: Request, response: Response, next: NextFunction) {
     const { email, oldPassword, newPassword }: ChangePasswordCredentials = request.body;
-    const bearer = request.headers.authorization;
 
     try {
-      await verifyToken(bearer as string, process.env.JWT_ACCESS_SECRET_KEY!, next);
       const user = await prisma.user.findUnique({
         where: {
           email: email,
