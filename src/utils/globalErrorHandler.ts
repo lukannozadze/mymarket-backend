@@ -20,6 +20,7 @@ export const ERROR_CODES = {
   couldNotCreateUser: "COULD NOT CREATE NEW USER",
   invalidOrExpiredToken: "INVALID OR EXPIRED TOKEN",
   userNotFound: "USER NOT FOUND",
+  accessDenied: "ACCESS DENIED! NO TOKEN PROVIDED",
 } as const;
 
 const ERROR_MAP: ErrorMap = {
@@ -38,6 +39,10 @@ const ERROR_MAP: ErrorMap = {
   userNotFound: {
     status: 404,
     message: ERROR_CODES.userNotFound,
+  },
+  accessDenied: {
+    status: 401,
+    message: ERROR_CODES.accessDenied,
   },
   couldNotCreateUser: {
     status: 500,

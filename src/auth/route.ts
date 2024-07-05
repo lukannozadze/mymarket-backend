@@ -32,5 +32,5 @@ authRouter.post("/login", validateRequest(loginSchema), login),
     authenticateToken,
     changePassword,
   ),
-  authRouter.get("/verify-email", authenticateToken, verifyEmail);
-authRouter.post("/refresh-token", refreshToken);
+  authRouter.post("/refresh-token", authenticateToken, refreshToken);
+authRouter.get("/verify-email", authenticateToken, verifyEmail);

@@ -29,8 +29,14 @@ export class AuthModule {
       if (!user.isVerified) {
         return next(new Error(ERROR_CODES.emailNotVerified));
       }
-      const { accessToken } = await generateTokens({ id: user.id, email: user.email });
-      return response.status(200).json({ message: "Successful login", token: accessToken });
+      const { accessToken, refreshToken } = await generateTokens({
+        id: user.id,
+        email: user.email,
+      });
+      return response
+        .header("authorization", accessToken)
+        .cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" })
+        .send(user);
     } catch (error) {
       console.error(error);
       next(new Error("Something Went Wrong"));
@@ -52,13 +58,16 @@ export class AuthModule {
         id: user.id,
         email: user.email,
       });
-      response.setHeader("bearer", accessToken);
+
       await sendVerificationEmail(email, accessToken);
       await prisma.user.update({
         where: { email: email },
         data: { accessToken: accessToken, refreshToken: refreshToken },
       });
-      response.status(201).json({ message: "User created", user });
+      return response
+        .header("authorization", accessToken)
+        .cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" })
+        .send(user);
     } catch (error) {
       console.error(error);
       next(new Error(ERROR_CODES.couldNotCreateUser));
@@ -68,8 +77,6 @@ export class AuthModule {
   async verifyEmail(request: Request, response: Response, next: NextFunction) {
     const { token } = request.query;
     try {
-      //await verifyToken(token as string, process.env.JWT_ACCESS_SECRET_KEY!, next);
-
       await prisma.user.update({
         where: { accessToken: token as string },
         data: { isVerified: true },
@@ -134,27 +141,30 @@ export class AuthModule {
   }
 
   async refreshToken(request: Request, response: Response, next: NextFunction) {
-    const refreshToken = request.headers.authorization as string;
+    const refToken = request.headers.cookie?.split(";")[1].replace(" refreshToken=", "") as string;
     try {
-      const decoded = await decodeToken(refreshToken as string, next);
+      const decoded = await decodeToken(refToken as string, next);
       const decodedEmail = JSON.parse(JSON.stringify(decoded?.payload)).email as string;
       const decodedId = parseFloat(JSON.parse(JSON.stringify(decoded?.payload)).id);
       const user = await prisma.user.findUnique({ where: { email: decodedEmail } });
       if (!user) {
         return next(new Error(ERROR_CODES.userNotFound));
       }
-      const { accessToken } = await generateTokens({ id: decodedId, email: decodedEmail }!);
+
+      const { accessToken, refreshToken } = await generateTokens(
+        { id: decodedId, email: decodedEmail }!,
+      );
+
       await prisma.user.update({
         where: {
           email: decodedEmail,
         },
         data: {
           accessToken: accessToken,
+          refreshToken: refreshToken,
         },
       });
-      response.setHeader("bearer", accessToken);
-
-      response.status(200).json({ message: "Token Refreshed Successfully", accessToken });
+      return response.header("authorization", accessToken).send(user);
     } catch (error) {
       console.error(error);
       next(new Error(ERROR_CODES.invalidOrExpiredToken));

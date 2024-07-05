@@ -11,7 +11,7 @@ const ACCESS_SECRET_KEY = process.env.JWT_ACCESS_SECRET_KEY || "mysecretaccess!"
 const REFRESH_SECRET_KEY = process.env.JWT_REFRESH_SECRET_KEY || "mysecretrefresh!";
 
 export const generateTokens = async ({ id, email }: generateTokenPayload) => {
-  const accessToken = await jwt.sign({ id, email }, ACCESS_SECRET_KEY, { expiresIn: "60000" });
+  const accessToken = await jwt.sign({ id, email }, ACCESS_SECRET_KEY, { expiresIn: "460000" });
   const refreshToken = await jwt.sign({ id, email }, REFRESH_SECRET_KEY, { expiresIn: "1h" });
   return { accessToken, refreshToken };
 };
