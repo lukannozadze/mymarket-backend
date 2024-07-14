@@ -36,7 +36,8 @@ export class AuthModule {
       return response
         .header("authorization", accessToken)
         .cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" })
-        .send(user);
+        .json({ message: "login is successful" })
+        .status(201);
     } catch (error) {
       console.error(error);
       next(new Error("Something Went Wrong"));
@@ -67,7 +68,8 @@ export class AuthModule {
       return response
         .header("authorization", accessToken)
         .cookie("refreshToken", refreshToken, { httpOnly: true, sameSite: "strict" })
-        .send(user);
+        .json({ message: "login is successful" })
+        .status(201);
     } catch (error) {
       console.error(error);
       next(new Error(ERROR_CODES.couldNotCreateUser));

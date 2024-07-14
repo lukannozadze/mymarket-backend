@@ -4,7 +4,9 @@ import { ERROR_CODES } from "./globalErrorHandler";
 
 export const authenticateToken = async (request: Request, _: Response, next: NextFunction) => {
   const authToken = request?.headers?.authorization;
-  const refreshToken = request?.headers?.cookie?.split(";")[1]?.replace(" refreshToken=", "");
+  const refreshToken = request?.headers?.cookie?.includes("refreshToken")
+    ? request.headers.cookie?.split(";")[1]?.replace(" refreshToken=", "")
+    : null;
   const { token } = request?.query;
 
   if (!authToken && !token && request.cookies && refreshToken)
