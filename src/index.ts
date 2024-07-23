@@ -5,6 +5,7 @@ import { globalErrorHandler } from "./utils/globalErrorHandler";
 import dotenv from "dotenv";
 import cors from "cors";
 import { handleUncaughtExceptions, handleUnhandledRejections } from "./utils/processErrorHandler";
+import { Server } from "socket.io";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ handleUnhandledRejections();
 handleUncaughtExceptions();
 
 app.use(express.json());
+
 app.use(
   cors({
     origin: "*",
@@ -25,6 +27,23 @@ app.use(morgan("dev"));
 app.use("/auth", authRouter);
 app.use(globalErrorHandler);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Listening to PORT ${PORT}`);
+});
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log(`User ${socket.id} connected`);
+
+  socket.on("message", (message, name) => {
+    io.emit("message", `${name} said:  ${message} `);
+  });
+  socket.on("disconnect", () => {
+    console.log(`User ${socket.id} disconnected`);
+  });
 });

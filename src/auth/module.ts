@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { comparePassword, hashPassword } from "../lib/bcrypt";
-import { decodeToken, generateTokens, verifyToken } from "../lib/jwt";
+import { decodeToken, generateTokens } from "../lib/jwt";
 import { sendVerificationEmail } from "../lib/nodemailer";
 import { ERROR_CODES } from "../utils/globalErrorHandler";
 import { User } from "./types";
