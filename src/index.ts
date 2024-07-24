@@ -5,7 +5,7 @@ import { globalErrorHandler } from "./utils/globalErrorHandler";
 import dotenv from "dotenv";
 import cors from "cors";
 import { handleUncaughtExceptions, handleUnhandledRejections } from "./utils/processErrorHandler";
-//import { Server } from "socket.io";
+import { Server } from "socket.io";
 
 dotenv.config();
 
@@ -31,19 +31,19 @@ const server = app.listen(PORT, () => {
   console.log(`Listening to PORT ${PORT}`);
 });
 
-// const io = new Server(server, {
-//   cors: {
-//     origin: "*",
-//   },
-// });
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
-// io.on("connection", (socket) => {
-//   console.log(`User ${socket.id} connected`);
+io.on("connection", (socket) => {
+  console.log(`User ${socket.id} connected`);
 
-//   socket.on("message", (message, name) => {
-//     io.emit("message", `${name} said:  ${message} `);
-//   });
-//   socket.on("disconnect", () => {
-//     console.log(`User ${socket.id} disconnected`);
-//   });
-// });
+  socket.on("message", (message, name) => {
+    io.emit("message", `${name} said:  ${message} `);
+  });
+  socket.on("disconnect", () => {
+    console.log(`User ${socket.id} disconnected`);
+  });
+});
