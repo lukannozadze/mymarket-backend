@@ -30,6 +30,9 @@ app.use(globalErrorHandler);
 const server = app.listen(PORT, () => {
   console.log(`Listening to PORT ${PORT}`);
 });
+app.get('/', (_, res) => {
+  res.send('Server is running');
+});
 
 const io = new Server(server, {
   cors: {
