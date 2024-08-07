@@ -6,6 +6,12 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { handleUncaughtExceptions, handleUnhandledRejections } from "./utils/processErrorHandler";
 import { Server } from "socket.io";
+import {rateLimit} from "express-rate-limit";
+
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	limit: 10, 
+})
 
 dotenv.config();
 
@@ -23,6 +29,7 @@ app.use(
     origin: "*",
   }),
 );
+app.use(limiter);
 app.use(morgan("dev"));
 app.use("/auth", authRouter);
 app.use(globalErrorHandler);
