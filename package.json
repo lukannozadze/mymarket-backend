@@ -5,7 +5,6 @@
   "scripts": {
     "build": "npx tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:prod": "node ./dist/index.js",
     "start:dev": "nodemon",
     "prepare": "husky install"
   },
